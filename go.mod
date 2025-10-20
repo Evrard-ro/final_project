@@ -3,6 +3,7 @@ module github.com/Evrard-ro/final_project
 go 1.24.4
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/stretchr/testify v1.11.1
 	modernc.org/sqlite v1.39.0
