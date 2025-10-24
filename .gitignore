@@ -1,0 +1,54 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+
+# Go workspace file
+go.work
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build output
+/scheduler
+/final_project
+*.log
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+scheduler.db
+test_scheduler.db
+
+# Data directory
+/data/
+!/data/.gitkeep
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Token for tests (contains sensitive data)
+tests/settings.go
+
+# Docker
+.dockerignore
+
