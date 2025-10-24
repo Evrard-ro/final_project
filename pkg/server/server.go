@@ -9,6 +9,9 @@ import (
 	"github.com/Evrard-ro/final_project/pkg/api"
 )
 
+const (
+	DefaultPort = "7540"
+)
 
 func getPort() string {
 	// Проверяем переменную окружения TODO_PORT
@@ -16,7 +19,7 @@ func getPort() string {
 		return port
 	}
 	// По умолчанию используем порт 7540
-	return "7540"
+	return DefaultPort
 }
 
 func getWebDir() string {

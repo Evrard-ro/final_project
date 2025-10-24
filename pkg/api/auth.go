@@ -13,6 +13,11 @@ import (
 
 const jwtSecret = "your-secret-key-change-in-production"
 
+var (
+	configPassword string
+	authEnabled    bool
+)
+
 type SignInRequest struct {
 	Password string `json:"password"`
 }
@@ -20,6 +25,12 @@ type SignInRequest struct {
 type SignInResponse struct {
 	Token string `json:"token,omitempty"`
 	Error string `json:"error,omitempty"`
+}
+
+// InitAuth инициализирует конфигурацию аутентификации
+func InitAuth() {
+	configPassword = os.Getenv("TODO_PASSWORD")
+	authEnabled = len(configPassword) > 0
 }
 
 // passwordHash создаёт SHA256 хеш пароля
@@ -72,39 +83,52 @@ func validateToken(tokenString string, currentPassword string) bool {
 
 // signInHandler обрабатывает POST /api/signin
 func signInHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	var req SignInRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, SignInResponse{Error: "Некорректный запрос"})
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(SignInResponse{Error: "Некорректный запрос"})
 		return
 	}
 
-	password := os.Getenv("TODO_PASSWORD")
-	if password == "" {
-		writeJSON(w, SignInResponse{Error: "Аутентификация не настроена"})
+	if !authEnabled {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(SignInResponse{Error: "Аутентификация не настроена"})
 		return
 	}
 
-	if req.Password != password {
-		writeJSON(w, SignInResponse{Error: "Неверный пароль"})
+	if req.Password != configPassword {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(SignInResponse{Error: "Неверный пароль"})
 		return
 	}
 
-	token, err := createToken(password)
+	token, err := createToken(configPassword)
 	if err != nil {
-		writeJSON(w, SignInResponse{Error: "Ошибка создания токена"})
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(SignInResponse{Error: "Ошибка создания токена"})
 		return
 	}
 
-	writeJSON(w, SignInResponse{Token: token})
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(SignInResponse{Token: token})
 }
 
 // auth middleware для проверки аутентификации
 func auth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Проверяем, установлен ли пароль
-		password := os.Getenv("TODO_PASSWORD")
-		if len(password) > 0 {
+		// Проверяем, включена ли аутентификация
+		if authEnabled {
 			var jwtToken string
 
 			// Получаем куку token
@@ -114,7 +138,7 @@ func auth(next http.HandlerFunc) http.HandlerFunc {
 			}
 
 			// Валидируем токен
-			valid := validateToken(jwtToken, password)
+			valid := validateToken(jwtToken, configPassword)
 
 			if !valid {
 				http.Error(w, "Authentication required", http.StatusUnauthorized)
